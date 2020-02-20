@@ -34,6 +34,7 @@ class PygameView(View):
 
         pygame.init()
 
+        self._default_font_small = pygame.font.Font(pygame.font.get_default_font(), 24) 
         self._default_font_big = pygame.font.Font(pygame.font.get_default_font(), 64) 
         self._default_font_big_outline = pygame.font.Font(pygame.font.get_default_font(), 64) 
 
@@ -47,6 +48,9 @@ class PygameView(View):
         self._refresh_map = True
 
         self.last_displayed_timer = None
+        self.last_displayed_aimed = None
+
+        self.debug = True
 
 
     def get_mult_factor(self):
@@ -79,12 +83,20 @@ class PygameView(View):
             self._refresh_map = False
 
             self._display_map() 
-
+        
+        if self.debug:
+            if not self._refresh_map:
+                self._display_map() 
+                
         self._display_bots()
         self._display_flags()
         self._display_countdown()
+
+        if self.debug:
+            #self.display_collision_map("RegularBot")
+            self.display_aimed()
         
-        #self.display_collision_map("RegularBot")
+
         self._window.blit(self._surface, (0, 0))
         pygame.display.flip()
 
@@ -147,8 +159,8 @@ class PygameView(View):
             self._refresh_map = True
             
     def display_collision_map(self, name):
-        collision_map = self._model.getengine().collisions_maps[name]
-        divider = self._model.getengine().collisions_maps_dividers[name]
+        collision_map = self._model.getEngine().collisions_maps[name]
+        divider = self._model.getEngine().collisions_maps_dividers[name]
 
         (x,y) = (0,0)
         for line in collision_map:
@@ -168,6 +180,61 @@ class PygameView(View):
                 y += 1
             x += 1
             y = 0
+
+    def display_vertices(self, start_x = 0, start_y = 0, end_x = None, end_y = None):
+        """
+        """
+        if end_x == None:
+            end_x = self._map.blockWidth
+        if end_y == None:
+            end_y = self._map.blockHeight
+
+        polygons = self._model._map.GetAllNonTransparentVertices(start_x, start_y, end_x, end_y)
+        for vertices in polygons:
+            
+            current = 0
+            for line in range(0,len(vertices)):
+                A = vertices[current]
+                B = vertices[current+1 if current != len(vertices)-1 else 0]
+                pygame.draw.line(
+                    self._window,
+                    pygame.Color(255,0,0),
+                    (A[0] * self.get_mult_factor(), A[1] * self.get_mult_factor()),
+                    (B[0] * self.get_mult_factor(), B[1] * self.get_mult_factor())
+                )
+
+                current += 1
+
+    def display_corners(self, start_x = 0, start_y = 0, end_x = None, end_y = None):
+        """
+        """
+        if end_x == None:
+            end_x = self._map.blockWidth
+        if end_y == None:
+            end_y = self._map.blockHeight
+
+        points = self._model._map.GetAllNonTransparentCorners(start_x, start_y, end_x, end_y)
+        for point in points:
+
+            pygame.gfxdraw.aacircle(
+                self._window,
+                int(point[0] * self.get_mult_factor()),
+                int(point[1] * self.get_mult_factor()),
+                5,
+                pygame.Color(255,0,0)
+            )
+
+    def display_aimed(self):
+        # refresh aimed cell only if changed
+        to_display = (self._model.mouse_coords[0] // self._cell_size,self._model.mouse_coords[1] // self._cell_size)
+
+        if self.last_displayed_aimed != to_display: 
+            to_display = '(x{},y{})'.format(to_display[0],to_display[1])
+            self.last_displayed_aimed_text = self._default_font_small.render(to_display, True, (0,0,0,255))
+
+        self._window.blit(self.last_displayed_aimed_text, self.last_displayed_aimed_text.get_rect())
+        
+
 
 
     def _display_tiles(self, start_x, start_y, end_x, end_y):
@@ -247,6 +314,10 @@ class PygameView(View):
 
                 self._display_tiles(start_x,start_y,end_x,end_y)
 
+                if self.debug:
+                    self.display_vertices(start_x,start_y,end_x,end_y)
+                    self.display_corners(start_x,start_y,end_x,end_y)
+
         for bot_id in bots.keys():  
             bot = bots[bot_id] 
             (r, g, b, a) = bot.color
@@ -296,7 +367,7 @@ class PygameView(View):
            length (int): The diameter of the circle containing the cone.
            angle_start (int): The angle at which the cone starts within the circle.
            angle_end (int): The angle at which the cone ends within the circle.
-           step (int): The done is made of triangles, a lower step makes a more precise curve.
+           step (int): The cone is made of triangles, a lower step makes a more precise curve.
         """
         angle_start = float(angle_start)
         angle_end = float (angle_end)

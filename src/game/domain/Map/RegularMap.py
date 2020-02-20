@@ -116,3 +116,73 @@ class RegularMap(Map):
             point (x,y): A point located in the spawn of a said team.
         """
         return Map.GetRandomPositionInBlock(choice(self._spawns[team]), margin)
+
+    def GetAllNonTransparentVertices(self, start_x = 0, start_y = 0, end_x = None, end_y = None):
+        """
+        """
+        if end_x == None:
+            end_x = self.blockWidth
+        if end_y == None:
+            end_y = self.blockHeight
+
+        polygons = list()
+
+        for line in self.blocks[start_x:end_x]:
+            for block in line[start_y:end_y]:
+                if not block.transparent:
+                    vertices = list()
+                    vertices.append((block.x,block.y,1))
+                    vertices.append((block.x + Map.BLOCKSIZE,block.y,2))
+                    vertices.append((block.x + Map.BLOCKSIZE,block.y + Map.BLOCKSIZE,0))
+                    vertices.append((block.x,block.y + Map.BLOCKSIZE,0))
+                    polygons.append(vertices)
+
+        return polygons
+
+    def GetAllNonTransparentCorners(self, start_x = 0, start_y = 0, end_x = None, end_y = None):
+        """
+        """
+        if end_x == None:
+            end_x = self.blockWidth
+        if end_y == None:
+            end_y = self.blockHeight
+
+        corners = dict()
+
+        for vertices in self.GetAllNonTransparentVertices(start_x, start_y, end_x, end_y):
+            
+            for point in vertices:
+                coords = (point[0], point[1])
+                (x,y) = (coords[0] // Map.BLOCKSIZE,coords[1] // Map.BLOCKSIZE)
+                corners[coords] = corners.get(coords, 0) + 1
+
+                # Might not be required
+                # edgeCase = False
+                # force = False
+
+                # if point[2] == 1:
+                #     if x > 0 and y > 0:
+                #         D = self.blocks[x-1][y-1].transparent
+                #         R = self.blocks[x][y-1].transparent
+                #         L = self.blocks[x-1][y].transparent
+                #         M = self.blocks[x][y].transparent
+
+                #         edgeCase = (M == D and L == R and M != L)
+
+                # if point[2] == 2:
+                #     if x < self.blockWidth - 1 and y > 0:
+                #         R = self.blocks[x+1][y-1].transparent
+                #         L = self.blocks[x][y-1].transparent
+                #         M = self.blocks[x+1][y].transparent
+                #         D = self.blocks[x][y].transparent
+
+                #         force = (M == D and L == R and M != L)
+
+                if corners[coords] == 2: #and not edgeCase or force:
+                    del corners[coords]
+                    
+        for point in corners.keys():
+            if corners[point] % 2 != 0:
+                corners[point]
+
+        return corners
