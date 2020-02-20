@@ -205,7 +205,7 @@ class PygameView(View):
 
                 current += 1
 
-    def display_corners(self, start_x = 0, start_y = 0, end_x = None, end_y = None):
+    def display_corners(self, start_x = 0, start_y = 0, end_x = None, end_y = None, corners = None):
         """
         """
         if end_x == None:
@@ -213,7 +213,11 @@ class PygameView(View):
         if end_y == None:
             end_y = self._map.blockHeight
 
-        points = self._model._map.GetAllNonTransparentCorners(start_x, start_y, end_x, end_y)
+        if corners == None:
+            points = self._model._map.GetAllNonTransparentCorners(start_x, start_y, end_x, end_y)
+        else:
+            points = corners
+
         for point in points:
 
             pygame.gfxdraw.aacircle(
@@ -314,10 +318,6 @@ class PygameView(View):
 
                 self._display_tiles(start_x,start_y,end_x,end_y)
 
-                if self.debug:
-                    self.display_vertices(start_x,start_y,end_x,end_y)
-                    self.display_corners(start_x,start_y,end_x,end_y)
-
         for bot_id in bots.keys():  
             bot = bots[bot_id] 
             (r, g, b, a) = bot.color
@@ -332,7 +332,7 @@ class PygameView(View):
                 x,
                 y, 
                 pygame.Color(r, g, b, 70),
-                bot.view_distance * 2,
+                bot.view_distance * self._mult_factor,
                 int(bot.angle - bot.fov),
                 int(bot.angle + bot.fov),
                 10
@@ -355,6 +355,10 @@ class PygameView(View):
                     int(y + sin(radians(bot.angle)) * 1.5 * bot_radius)
                 )
             )
+
+            if self.debug:
+                #self.display_vertices(start_x,start_y,end_x,end_y)
+                self.display_corners(corners=self._model.getEngine().getBotVisibleCorners(bot))
 
     def _draw_cone(self, x, y, color, length, angle_start, angle_end, step = 1):
         """ 
