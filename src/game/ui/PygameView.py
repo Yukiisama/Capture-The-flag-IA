@@ -17,6 +17,11 @@ class PygameView(View):
         map (Map)       : The Map object from Model, for easier access.
     """
 
+    DEBUG_COLLISIONMAP = 0
+    DEBUG_CELL_COORDS = 1
+    DEBUG_VERTICES = 2
+    DEBUG_CORNERS = 3
+
     def __init__(self, model):
         """ 
         The constructor for PygameView.
@@ -50,7 +55,7 @@ class PygameView(View):
         self.last_displayed_timer = None
         self.last_displayed_aimed = None
 
-        self.debug = True
+        self.debug = [False]*4
 
 
     def get_mult_factor(self):
@@ -83,18 +88,22 @@ class PygameView(View):
             self._refresh_map = False
 
             self._display_map() 
-        
-        if self.debug:
-            if not self._refresh_map:
-                self._display_map() 
                 
         self._display_bots()
         self._display_flags()
         self._display_countdown()
 
-        if self.debug:
-            #self.display_collision_map("RegularBot")
+        if self.debug[PygameView.DEBUG_COLLISIONMAP]:
+            self.display_collision_map("RegularBot")
+        if self.debug[PygameView.DEBUG_CELL_COORDS]:
             self.display_aimed()
+        if self.debug[PygameView.DEBUG_VERTICES]:
+            self.display_vertices()
+        if self.debug[PygameView.DEBUG_CORNERS]:
+            bots = self._model.getBots()
+            for bot_id in bots.keys():  
+                bot = bots[bot_id] 
+                self.display_corners(corners=self._model.getEngine().getBotVisibleCorners(bot))
         
 
         self._window.blit(self._surface, (0, 0))
@@ -189,7 +198,7 @@ class PygameView(View):
         if end_y == None:
             end_y = self._map.blockHeight
 
-        polygons = self._model._map.GetAllNonTransparentVertices(start_x, start_y, end_x, end_y)
+        polygons = self._model.getEngine().GetAllNonTransparentVertices(start_x, start_y, end_x, end_y)
         for vertices in polygons:
             
             current = 0
@@ -356,10 +365,6 @@ class PygameView(View):
                 )
             )
 
-            if self.debug:
-                #self.display_vertices(start_x,start_y,end_x,end_y)
-                self.display_corners(corners=self._model.getEngine().getBotVisibleCorners(bot))
-
     def _draw_cone(self, x, y, color, length, angle_start, angle_end, step = 1):
         """ 
         Draws a cone.
@@ -404,3 +409,6 @@ class PygameView(View):
 
         self._window.blit(self.cone_surface, (old_x - length, old_y - length))
 
+    def debug_switch(self, debugmode):
+        self.debug[debugmode] = not self.debug[debugmode]
+        self._refresh_map = True

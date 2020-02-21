@@ -234,7 +234,6 @@ class PhysicsEngine(Physics):
         for line in self._map.blocks[start_x:end_x]:
             for block in line[start_y:end_y]:
                 if c_r != None:
-                    print(c_x, block.x,c_y, block.y,c_r)
                     if Physics.distance(c_x, block.x,c_y, block.y) > c_r:
                         continue
                 if not block.transparent:
