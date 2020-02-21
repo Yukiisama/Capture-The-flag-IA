@@ -35,7 +35,11 @@ class myPlayer(Player):
             _blocked_bots: List of the blocked bots : bot_id is add to list if the bot is blocked
     """
     
-    def __init__(self, _map, rules):
+    def __init__(self, _map, rules, team):
+        # vvvvvvvvvvv
+        RegularMap(_map) # <----- use this for the map
+        # ^^^^^^^^^^^
+
         # map and rules are python objects, need to make them JSON
         self._map          = _map
         self._rules        = rules
@@ -46,6 +50,8 @@ class myPlayer(Player):
         self._lastPosition = {}
         self._canSend      = False
         self._blocked_bots = list()
+
+        self._team = team
         #print("Bonjour! Je suis un joueur :))) avec {} bots".format(rules["BotsCount"]))
 
     """
@@ -139,14 +145,14 @@ class myPlayer(Player):
     """
 
     def incrementIndex(self, bot_id, current_position):
-        maxDistance = 80.0
+        rayonBot = 36
         if bot_id in self._currentPath and bot_id in self._currentIndex and self._currentPath[bot_id] != None :
             
             posInPath    = self.getNextPos(bot_id)
             lengthPath   = len(self._currentPath[bot_id]) -1
             distancePath = self._distance(current_position, posInPath)
-
-            if distancePath < maxDistance and self._currentIndex[bot_id] != lengthPath :
+            distanceOld  = self._distance(current_position,self._lastPosition[bot_id])
+            if distanceOld - distancePath > -rayonBot and self._currentIndex[bot_id] != lengthPath :
                 self._currentIndex[bot_id] += 1
             
 
@@ -175,7 +181,6 @@ class myPlayer(Player):
                 angle -= 360
 
             pos_x, pos_y = current_position[0], current_position[1]
-            
             # Bloqué à gauche
             if pos_x % Map.BLOCKSIZE < 3 and self._map["blocks"][x - 1][y].solid:
                 if angle < 0: #negative
@@ -261,7 +266,7 @@ class myPlayer(Player):
 
     def getReturnPoll(self):
         returnData  = { "bots": { } }
-        maxDistance = 10.0
+        maxDistance = 0.0
 
         for bot_id in self._pollingData["bots"].keys():
             current_position = self._pollingData["bots"][bot_id]["current_position"]
