@@ -84,7 +84,7 @@ class PygameView(View):
         """
         self._surface.fill((0, 0, 0, 0))
 
-        if self._refresh_map:
+        if self._refresh_map or self.debug[PygameView.DEBUG_COLLISIONMAP]:
             self._refresh_map = False
 
             self._display_map() 
@@ -95,8 +95,6 @@ class PygameView(View):
 
         if self.debug[PygameView.DEBUG_COLLISIONMAP]:
             self.display_collision_map("RegularBot")
-        if self.debug[PygameView.DEBUG_CELL_COORDS]:
-            self.display_aimed()
         if self.debug[PygameView.DEBUG_VERTICES]:
             self.display_vertices()
         if self.debug[PygameView.DEBUG_CORNERS]:
@@ -105,6 +103,8 @@ class PygameView(View):
                 bot = bots[bot_id] 
                 self.display_corners(corners=self._model.getEngine().getBotVisibleCorners(bot))
         
+        if self.debug[PygameView.DEBUG_CELL_COORDS]:
+            self.display_aimed()
 
         self._window.blit(self._surface, (0, 0))
         pygame.display.flip()
@@ -168,27 +168,33 @@ class PygameView(View):
             self._refresh_map = True
             
     def display_collision_map(self, name):
-        collision_map = self._model.getEngine().collisions_maps[name]
-        divider = self._model.getEngine().collisions_maps_dividers[name]
+        try:
 
-        (x,y) = (0,0)
-        for line in collision_map:
-            for dot in line:
-                if dot:
+            self._window.blit(self.collision_surface, (0, 0))
+        except:
+            collision_map = self._model.getEngine().collisions_maps[name]
+            divider = self._model.getEngine().collisions_maps_dividers[name]
 
-                    current_rect = pygame.Rect(
-                        x * self._cell_size // divider,
-                        y * self._cell_size // divider,
-                        self._cell_size // divider,
-                        self._cell_size // divider
-                    )
-                    
-                    (r, g, b, a) = (255,0,0,0)
+            self.collision_surface = pygame.Surface(self._window_rect, pygame.SRCALPHA)
 
-                    pygame.draw.rect(self._window, pygame.Color(r, g, b, a), current_rect)
-                y += 1
-            x += 1
-            y = 0
+            (x,y) = (0,0)
+            for line in collision_map:
+                for dot in line:
+                    if dot:
+
+                        current_rect = pygame.Rect(
+                            int(x * self._cell_size // divider),
+                            int(y * self._cell_size // divider),
+                            round(self._cell_size / divider),
+                            round(self._cell_size / divider)
+                        )
+                        
+                        (r, g, b, a) = (255,0,0,60)
+
+                        pygame.draw.rect(self.collision_surface, pygame.Color(r, g, b, a), current_rect)
+                    y += 1
+                x += 1
+                y = 0
 
     def display_vertices(self, start_x = 0, start_y = 0, end_x = None, end_y = None):
         """
