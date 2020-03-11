@@ -21,8 +21,8 @@ class PygameController(Controller):
             elif event.type == pygame.MOUSEMOTION:
                 self._model.mouse_coords = pygame.mouse.get_pos()
                 (x,y) = (self._model.mouse_coords[0],self._model.mouse_coords[1])
-                self.current_mousex = int(x//self._view.get_mult_factor())
-                self.current_mousey = int(y//self._view.get_mult_factor())
+                self.current_mousex = int(x//self._view.getMultFactor())
+                self.current_mousey = int(y//self._view.getMultFactor())
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_a:
